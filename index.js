@@ -3,6 +3,9 @@ const dbConnect = require('./config/dbConnect');
 const authRouter = require('./routes/auth');
 const productRouter = require('./routes/productRoutes')
 const blogRouter = require('./routes/blogRouter')
+const productCategoryRouter = require('./routes/productcategoryRoutes')
+const blogCategoryRouter = require('./routes/blogcategoryRouter')
+const brandRouter = require('./routes/brandRouter')
 const bodyParser = require('body-parser');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
 const dotenv = require('dotenv').config()
@@ -26,6 +29,9 @@ app.use(cookieParser());
 app.use('/api/user',authRouter)
 app.use('/api/product', productRouter)
 app.use('/api/blog', blogRouter)
+app.use('/api/product-category', productCategoryRouter)
+app.use('/api/blog-category', blogCategoryRouter)
+app.use('/api/brand', brandRouter)
 
 //Middleware
 app.use(notFound)

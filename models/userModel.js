@@ -46,11 +46,11 @@ var userSchema = new Schema({
         default: []
     },
     address: [{
-        type: mongoose.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: "Address"
     }],
     wishlist: [{
-        type: mongoose.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: "Product"
     }],
     passwordChangedAt: Date,
