@@ -3,6 +3,7 @@ const slugify = require('slugify')
 const User = require('../models/userModel')
 const Product = require('../models/productModel')
 
+
 const createProduct = asyncHandler(async(req,res)=>{
     let product = req.body
     try {
@@ -140,4 +141,41 @@ const productWishlist = asyncHandler(async(req,res)=>{
 
 })
 
-module.exports = {createProduct, getSingleProduct, getAllProduct, updateProduct, deleteProduct,productWishlist}
+const ratingProduct = asyncHandler(async(req,res)=>{
+    let product
+    let rateProduct
+    let updateProduct
+    const userId = req.user.id
+    const {star,proId} = req.body
+    try {
+        product = await Product.findById(proId)
+        const alreadyRated = product.ratings.find((id)=> id.postedby.toString() === userId.toString())
+
+        if(alreadyRated){
+            updateProduct = await Product.updateOne({
+                ratings: { $elemMatch: alreadyRated}
+            },{
+                $set:{ "ratings.$.star": star}
+
+            },{new:true})
+            res.json(updateProduct)
+
+        }else{
+            rateProduct = await Product.findByIdAndUpdate(proId, {
+                $push: {
+                    ratings: {
+                        star: star,
+                        postedby: userId
+                    }}
+            },{new:true})
+
+            res.json(rateProduct)
+        }
+
+    } catch (error) {
+        return console.log(error)
+    }
+
+})
+
+module.exports = {createProduct, getSingleProduct, getAllProduct, updateProduct, deleteProduct,productWishlist, ratingProduct}
