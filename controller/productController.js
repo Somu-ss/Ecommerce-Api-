@@ -146,7 +146,7 @@ const ratingProduct = asyncHandler(async(req,res)=>{
     let rateProduct
     let updateProduct
     const userId = req.user.id
-    const {star,proId} = req.body
+    const {star,proId,comment} = req.body
     try {
         product = await Product.findById(proId)
         const alreadyRated = product.ratings.find((id)=> id.postedby.toString() === userId.toString())
@@ -155,22 +155,31 @@ const ratingProduct = asyncHandler(async(req,res)=>{
             updateProduct = await Product.updateOne({
                 ratings: { $elemMatch: alreadyRated}
             },{
-                $set:{ "ratings.$.star": star}
+                $set:{ "ratings.$.star": star,"ratings.$.comment": comment}
 
             },{new:true})
-            res.json(updateProduct)
 
         }else{
             rateProduct = await Product.findByIdAndUpdate(proId, {
                 $push: {
                     ratings: {
                         star: star,
+                        comment: comment,
                         postedby: userId
                     }}
             },{new:true})
 
-            res.json(rateProduct)
         }
+        const getallRatings = await Product.findById(proId)
+        let totalRating = getallRatings.ratings.length
+        let ratingSum = getallRatings.ratings.map((item)=> item.star).reduce((prev,curr)=>prev+curr,0)
+        console.log(ratingSum);
+        let avgRating = (ratingSum/totalRating).toFixed(1)
+        console.log(avgRating);
+        const finalRatings = await Product.findByIdAndUpdate(proId,{
+            totalrating: avgRating
+        },{new:true})
+        res.json(finalRatings )
 
     } catch (error) {
         return console.log(error)
