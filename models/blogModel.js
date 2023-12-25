@@ -34,8 +34,8 @@ var blogSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     }],
-    image: {
-        type: String,
+    images: {
+        type: Array,
         default: "https://www.freepik.com/free-photo/teamwork-making-online-blog_11306776.htm#query=blog%20post&position=0&from_view=keyword&track=ais&uuid=d3143d87-ce26-423b-a90f-edf1d48ef11c"
     },
     author: {
