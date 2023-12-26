@@ -5,7 +5,9 @@ const validateMongoDbId = require('../utils/validateMongodbID');
 const generateRefreshToken = require('../config/refrestToken');
 const sendEmail = require('../controller/emailcontroller')
 const jwt = require('jsonwebtoken')
-const crypto = require('crypto')
+const crypto = require('crypto');
+const { log } = require('console');
+const Address = require('../models/addressModel')
 
 
 //Register a User
@@ -31,7 +33,6 @@ const createUser = asyncHandler(async(req,res) => {
     }
     
 });
-
 
 //Login User
 const loginUser = asyncHandler(async(req,res) => {
@@ -61,6 +62,47 @@ const loginUser = asyncHandler(async(req,res) => {
                 mobile: findUser?.mobile,
                 role: findUser?.role,
                 token: generateToken(findUser?._id)
+            })
+
+        }else{
+            return res.status(409).json("Invalid Credentials")
+        }
+    } catch (error) {
+        console.log(error);
+        
+    }
+})
+
+
+//Login User
+const loginAdmin = asyncHandler(async(req,res) => {
+    let findAdmin;
+    const email = req.body.email
+    const password = req.body.password
+    try {
+        let refreshToken;
+        let updateRefreshToken;
+        findAdmin = await User.findOne({email:email})
+        if(findAdmin.role !== "admin") { res.status(401).json("You Are Not Authorized")}
+        if(findAdmin && (await findAdmin.isPasswordCorrect(password))){
+            refreshToken = generateRefreshToken(findAdmin?._id)
+            updateRefreshToken = await User.findByIdAndUpdate(findAdmin._id, {
+                refreshToken: refreshToken
+            },{
+                new: true
+            })
+            res.cookie("refreshToken", refreshToken,{
+                httpOnly: true,
+                maxAge: 72*60*60*1000
+            })
+            res.status(200).json({
+                _id: findAdmin?._id,
+                firstname: findAdmin?.firstname,
+                lastname: findAdmin?.lastname,
+                email: findAdmin?.email,
+                mobile: findAdmin?.mobile,
+                role: findAdmin?.role,
+                token: generateToken(findAdmin?._id)
             })
 
         }else{
@@ -288,8 +330,98 @@ const resetPassword = asyncHandler(async(req,res)=> {
     res.json(user)
 })
 
+const getWishlist = asyncHandler(async(req,res)=>{
+    let wishlist
+    const {_id} = req.user
+    validateMongoDbId(_id)
+    
+    try {
+        console.log(_id);
+        wishlist = await User.findById(_id).populate('wishlist')
+        res.json({
+                _id: wishlist?._id,
+                firstname: wishlist?.firstname,
+                lastname: wishlist?.lastname,
+                email: wishlist?.email,
+                mobile: wishlist?.mobile,
+                role: wishlist?.role,
+                wishlist:  wishlist?.wishlist
+        })
+    } catch (error) {
+        return console.log(error);
+    }
+
+})
+
+const createAddress = asyncHandler(async(req,res)=>{
+    let address
+    let userAddress
+    const createAddress= req.body;
+    const userId = req.user._id
+    try {
+        console.log(createAddress);
+        const user = await User.findById(userId)
+        address = await Address.create(createAddress)
+        const alreadyexist = user.address.find((id)=> id.toString() === address.id)
+
+        console.log(alreadyexist);
+        if(alreadyexist){
+            userAddress = await User.findByIdAndUpdate(userId,{
+                $pull:{address: address.id}
+            },{new:true}).populate("address")
+            res.status(200).json(userAddress)
+
+        }else{
+            userAddress = await User.findByIdAndUpdate(userId,{
+                $push:{address: address.id}
+            },{new:true}).populate("address")
+            res.status(200).json(userAddress)
+        }
+    
+
+    } catch (error) {
+        console.log(error);
+    }
+})
+
+const updateAddress = asyncHandler(async(req,res)=>{
+    let address
+    let user
+    const userId = req.user._id
+    const addId = req.params.id
+    const updateAddress = req.body
+    try {
+        address = await Address.findByIdAndUpdate(addId,{
+            doorno: updateAddress?.doorno,
+            area: updateAddress?.area,
+            landmark: updateAddress?.landmark,
+            city: updateAddress?.city,
+            state: updateAddress?.state,
+        },{new:true})
+        user = await User.findById(userId).populate('address')
+        res.json(user)
+
+    } catch (error) {
+        return console.log(error);
+    }
+})
+
+const deleteAddress = asyncHandler(async(req,res)=>{
+    let address
+    let user
+    const userId = req.user._id
+    const addId = req.params.id
+     try {
+        address = await Address.findByIdAndDelete(addId)
+        user = await User.findById(userId).populate('address')
+        res.json(user)
+
+    } catch (error) {
+        return console.log(error);
+    }
+})
 module.exports = {createUser,
       loginUser, getAllUsers, getUser, deleteUser,
       updateUser,blockUser,unblockUser,handleRefreshToken,
       logoutUser,updatePassword, forgetPasswordToken,
-      resetPassword};
+      resetPassword,loginAdmin,getWishlist,createAddress, updateAddress,deleteAddress};

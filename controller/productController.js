@@ -4,7 +4,6 @@ const User = require('../models/userModel')
 const Product = require('../models/productModel')
 const { cloudinaryImgUpload } = require('../utils/cloudinary')
 const validateMongoDbId = require('../utils/validateMongodbID');
-const fs = require('fs')
 
 
 const createProduct = asyncHandler(async(req,res)=>{
@@ -205,7 +204,8 @@ const uploadImage = asyncHandler(async(req,res)=> {
             const path = file.path
             const newPath = await upload(path)
             url.push(newPath)
-            fs.unlinkSync(path)
+            
+   
         }
         product = await Product.findByIdAndUpdate(id,
             {images : url.map((file) => {
